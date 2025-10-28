@@ -18,12 +18,10 @@ int debug_mode = 0;
 #include <sys/wait.h>
 #include <signal.h>
 
-// Signal handler to reap zombie processes
 void handle_sigchld(int sig) {
     while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
-// פונקציה להרצת פקודות
 void execute(cmdLine *pCmdLine) {
     pid_t pid = fork();
 
@@ -32,9 +30,8 @@ void execute(cmdLine *pCmdLine) {
         exit(1);
     }
 
-    if (pid == 0) { // תהליך ילד
+    if (pid == 0) { //child process
 
-        // ניתוב קלט
         if (pCmdLine->inputRedirect) {
             int inFile = open(pCmdLine->inputRedirect, O_RDONLY);
             if (inFile < 0) {
@@ -49,7 +46,6 @@ void execute(cmdLine *pCmdLine) {
             close(inFile);
         }
 
-        // ניתוב פלט
         if (pCmdLine->outputRedirect) {
             int outFile = open(pCmdLine->outputRedirect, O_WRONLY | O_CREAT | O_TRUNC, 0644);
             if (outFile < 0) {
@@ -67,7 +63,7 @@ void execute(cmdLine *pCmdLine) {
         execvp(pCmdLine->arguments[0], pCmdLine->arguments);
         perror("Exec failed");
         exit(1);
-    } else { // תהליך אב
+    } else { 
         if (debug_mode)
             fprintf(stderr, "PID: %d, Executing command: %s\n", pid, pCmdLine->arguments[0]);
 
@@ -83,14 +79,12 @@ int main(int argc, char **argv) {
     char input[MAX_LINE_LEN];
     cmdLine *line;
 
-    // בדיקת דגל debug
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-d") == 0)
             debug_mode = 1;
     }
 
     while (1) {
-        // הדפסת פרומפט עם הנתיב הנוכחי
         char cwd[PATH_MAX];
         if (getcwd(cwd, sizeof(cwd)) != NULL) {
             printf("%s> ", cwd);
@@ -99,7 +93,6 @@ int main(int argc, char **argv) {
             perror("getcwd() error");
         }
 
-        // קריאת קלט מהמשתמש
         if (fgets(input, MAX_LINE_LEN, stdin) == NULL)
             break;
 
@@ -107,13 +100,11 @@ int main(int argc, char **argv) {
         if (!line)
             continue;
 
-        // פקודת quit
         if (strcmp(line->arguments[0], "quit") == 0) {
             freeCmdLines(line);
             break;
         }
 
-        // פקודת cd
         if (strcmp(line->arguments[0], "cd") == 0) {
             if (line->argCount > 1) {
                 if (chdir(line->arguments[1]) != 0)
@@ -123,7 +114,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        // פקודות signals: halt, wakeup, ice
+       
         else if (strcmp(line->arguments[0], "halt") == 0 ||
                  strcmp(line->arguments[0], "wakeup") == 0 ||
                  strcmp(line->arguments[0], "ice") == 0) {
@@ -146,7 +137,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        // כל שאר הפקודות
+            
         else {
             execute(line);
         }
