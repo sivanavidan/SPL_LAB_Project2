@@ -5,21 +5,19 @@
 #include <sys/wait.h>
 
 int main(int argc, char *argv[]) {
-    int pipefd[2]; // pipefd[0] לקריאה, pipefd[1] לכתיבה
+    int pipefd[2]; 
 
-    // בדיקה שהמשתמש סיפק טקסט לשליחה
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <message>\n", argv[0]);
         exit(1);
     }
 
-    // יצירת הצינור
     if (pipe(pipefd) == -1) {
         perror("pipe");
         exit(1);
     }
 
-    pid_t pid = fork(); // יצירת תהליך ילד
+    pid_t pid = fork(); 
 
     if (pid < 0) {
         perror("fork");
@@ -27,34 +25,31 @@ int main(int argc, char *argv[]) {
     }
 
     if (pid == 0) {
-        // תהליך ילד
 
-        close(pipefd[1]); // סוגר את צד הכתיבה - הילד רק קורא
+        close(pipefd[1]); 
 
         char buffer[1024];
-        ssize_t count = read(pipefd[0], buffer, sizeof(buffer) - 1); // קורא מהצינור
+        ssize_t count = read(pipefd[0], buffer, sizeof(buffer) - 1); 
 
         if (count < 0) {
             perror("read");
             exit(1);
         }
 
-        buffer[count] = '\0'; // סוגר את המחרוזת
+        buffer[count] = '\0'; 
 
         printf("Child received message: %s\n", buffer);
 
-        close(pipefd[0]); // סוגר את צד הקריאה
+        close(pipefd[0]); 
     } else {
-        // תהליך הורה
 
-        close(pipefd[0]); // סוגר את צד הקריאה - ההורה רק כותב
+        close(pipefd[0]); 
 
-        // שולח את ההודעה לילד
         write(pipefd[1], argv[1], strlen(argv[1]));
 
-        close(pipefd[1]); // סוגר את צד הכתיבה
+        close(pipefd[1]); 
 
-        wait(NULL); // ממתין לסיום הילד
+        wait(NULL);
     }
 
     return 0;
